@@ -25,11 +25,10 @@ async function main() {
   try {
     await hre.run("verify:verify", {
       address: tokenAddress,
-      constructorArguments: [], // If the constructor has arguments, pass them here
+      constructorArguments: [],
     });
     console.log("MySimpleToken contract verified successfully!");
   } catch (error) {
-    // If the contract is already verified, an error will be thrown. We handle it here.
     if (error.message.toLowerCase().includes("already verified")) {
       console.log("MySimpleToken contract is already verified.");
     } else {
@@ -42,11 +41,10 @@ async function main() {
   try {
     await hre.run("verify:verify", {
       address: nftAddress,
-      constructorArguments: [], // If the constructor has arguments, pass them here
+      constructorArguments: [], 
     });
     console.log("Contract verified successfully!");
   } catch (error) {
-    // If the contract is already verified, an error will be thrown. We handle it here.
     if (error.message.toLowerCase().includes("already verified")) {
       console.log("Contract is already verified.");
     } else {

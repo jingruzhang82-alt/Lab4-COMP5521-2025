@@ -1,11 +1,11 @@
 const hre = require("hardhat");
 
 // --- CONFIGURATION ---
-// Paste the deployed contract addresses here
-const TOKEN_CONTRACT_ADDRESS = "0xa40E2e24a9a8C0378d6B92732132E54860Cc587b";
-const NFT_CONTRACT_ADDRESS = "0xe17d5BE423d4EB6F5A3B9B48715e018E7D87fEb8";
+// ! Paste the deployed contract addresses here
+const TOKEN_CONTRACT_ADDRESS = "0xYourDeployedTokenAddress";
+const NFT_CONTRACT_ADDRESS = "0xYourDeployedNftAddress";
 
-// A sample metadata URI. For the demo, we can use a pre-made one.
+// Just a sample metadata URI.
 const METADATA_URI = "https://ipfs.io/ipfs/QmeSjSinHpPnmXmspMjwiXyN6zS4E9zccariGR3jxcaWtq/1";
 // --- END CONFIGURATION ---
 
@@ -20,24 +20,24 @@ async function main() {
   const tokenContract = await hre.ethers.getContractAt("MySimpleToken", TOKEN_CONTRACT_ADDRESS);
   const nftContract = await hre.ethers.getContractAt("MyCollectible", NFT_CONTRACT_ADDRESS);
 
-//   // --- 1. SETUP THE SCENE ---
-//   console.log("\n--- Setting up the scene ---");
-//   // Owner mints 1000 MST tokens to Bob
-//   const mintAmount = hre.ethers.parseUnits("1000", 18);
-//   let tx = await tokenContract.connect(owner).mint(bob.address, mintAmount);
-//   await tx.wait();
-//   console.log(`Minted 1000 MST to Bob.`);
+  // --- 1. SETUP THE SCENE ---
+  console.log("\n--- Setting up the scene ---");
+  // Owner mints 1000 MST tokens to Bob
+  const mintAmount = hre.ethers.parseUnits("1000", 18);
+  let tx = await tokenContract.connect(owner).mint(bob.address, mintAmount);
+  await tx.wait();
+  console.log(`Minted 1000 MST to Bob.`);
 
-//   // Owner mints NFT with tokenId 0 to Alice
-//   tx = await nftContract.connect(owner).safeMint(alice.address, METADATA_URI);
-//   await tx.wait();
-//   console.log(`Minted NFT with tokenId 0 to Alice.`);
+  // Owner mints NFT with tokenId 0 to Alice
+  tx = await nftContract.connect(owner).safeMint(alice.address, METADATA_URI);
+  await tx.wait();
+  console.log(`Minted NFT with tokenId 0 to Alice.`);
 
-//   console.log("\n--- Initial State ---");
-//   console.log(`Alice's NFT Balance: ${await nftContract.balanceOf(alice.address)}`);
-//   console.log(`Bob's   NFT Balance: ${await nftContract.balanceOf(bob.address)}`);
-//   console.log(`Owner of NFT #0: ${await nftContract.ownerOf(0)}`);
-//   console.log(`Bob's Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(bob.address), 18)} MST`);
+  console.log("\n--- Initial State ---");
+  console.log(`Alice's NFT Balance: ${await nftContract.balanceOf(alice.address)}`);
+  console.log(`Bob's   NFT Balance: ${await nftContract.balanceOf(bob.address)}`);
+  console.log(`Owner of NFT #0: ${await nftContract.ownerOf(0)}`);
+  console.log(`Bob's Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(bob.address), 18)} MST`);
 
   // --- 2. THE APPROVALS (PERMISSION SLIPS) ---
   console.log("\n--- The Approvals ---");

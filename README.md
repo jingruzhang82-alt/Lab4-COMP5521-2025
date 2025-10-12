@@ -11,8 +11,8 @@ This is the sample code repository for the COMP5521 2025 Lab 4. This lab builds 
 ## Setup Instructions
 1.  **Clone this repository:**
     ```bash
-    git clone <YOUR_REPO_URL>
-    cd <YOUR_REPO_DIRECTORY>
+    git clone https://github.com/AnthonyXuan/Lab4-COMP5521-2025.git
+    cd Lab4-COMP5521-2025
     ```
 
 2.  **Install dependencies:**
