@@ -8,10 +8,7 @@ module.exports = {
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "",
       accounts: [
-        process.env.PRIVATE_KEY, // This is the Owner's private key
-        process.env.ALICE_PRIVATE_KEY,
-        process.env.BOB_PRIVATE_KEY
-      ].filter(Boolean)
+        process.env.PRIVATE_KEY].filter(Boolean),
     },
   },
   etherscan: {

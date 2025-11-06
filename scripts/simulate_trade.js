@@ -3,7 +3,7 @@ const hre = require("hardhat");
 // --- CONFIGURATION ---
 // ! Paste the deployed contract addresses here
 const TOKEN_CONTRACT_ADDRESS = "0xYourDeployedTokenAddress";
-const NFT_CONTRACT_ADDRESS = "0xYourDeployedNftAddress";
+const NFT_CONTRACT_ADDRESS = "0xB9cCa0cfe048f99A4B1Df4ba51499Cde9Ab2b8e4";
 
 // Just a sample metadata URI.
 const METADATA_URI = "https://ipfs.io/ipfs/QmeSjSinHpPnmXmspMjwiXyN6zS4E9zccariGR3jxcaWtq/1";
@@ -18,7 +18,7 @@ async function main() {
 
   // Get contract instances
   const tokenContract = await hre.ethers.getContractAt("MySimpleToken", TOKEN_CONTRACT_ADDRESS);
-  const nftContract = await hre.ethers.getContractAt("MyCollectible", NFT_CONTRACT_ADDRESS);
+  const nftContract = await hre.ethers.getContractAt("MyNFT", NFT_CONTRACT_ADDRESS);
 
   // --- 1. SETUP THE SCENE ---
   console.log("\n--- Setting up the scene ---");
@@ -31,21 +31,21 @@ async function main() {
   // Owner mints NFT with tokenId 0 to Alice
   tx = await nftContract.connect(owner).safeMint(alice.address, METADATA_URI);
   await tx.wait();
-  console.log(`Minted NFT with tokenId 0 to Alice.`);
+  console.log(`Minted NFT with tokenId 1 to Alice.`);
 
   console.log("\n--- Initial State ---");
   console.log(`Alice's NFT Balance: ${await nftContract.balanceOf(alice.address)}`);
   console.log(`Bob's   NFT Balance: ${await nftContract.balanceOf(bob.address)}`);
-  console.log(`Owner of NFT #0: ${await nftContract.ownerOf(0)}`);
+  console.log(`Owner of NFT #1: ${await nftContract.ownerOf(1)}`);
   console.log(`Bob's Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(bob.address), 18)} MST`);
 
   // --- 2. THE APPROVALS (PERMISSION SLIPS) ---
   console.log("\n--- The Approvals ---");
   const price = hre.ethers.parseUnits("500", 18); // The agreed price is 500 MST
 
-  // Alice approves the Owner to manage her NFT #0
+  // Alice approves the Owner to manage her NFT #1
   // In a real DApp, the 'owner.address' would be the Marketplace Contract's address
-  tx = await nftContract.connect(alice).approve(owner.address, 0);
+  tx = await nftContract.connect(alice).approve(owner.address, 1);
   await tx.wait();
   console.log(`Alice approved Owner to manage her NFT #0.`);
   
@@ -62,10 +62,10 @@ async function main() {
   await tx.wait();
   console.log(`Owner (as marketplace) transferred 500 MST from Bob to Alice.`);
   
-  // Transfer NFT #0 from Alice to Bob
-  tx = await nftContract.connect(owner).transferFrom(alice.address, bob.address, 0);
+  // Transfer NFT #1 from Alice to Bob
+  tx = await nftContract.connect(owner).transferFrom(alice.address, bob.address, 1);
   await tx.wait();
-  console.log(`Owner (as marketplace) transferred NFT #0 from Alice to Bob.`);
+  console.log(`Owner (as marketplace) transferred NFT #1 from Alice to Bob.`);
 
   // --- 4. FINAL STATE ---
   console.log("\n--- Final State ---");
@@ -74,7 +74,9 @@ async function main() {
   console.log(`Owner of NFT #0: ${await nftContract.ownerOf(0)}`);
   console.log(`Alice's Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(alice.address), 18)} MST`);
   console.log(`Bob's   Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(bob.address), 18)} MST`);
+  console.log(`Total NFTs minted: ${await nftContract.getCurrentTokenId()}`);
 }
+
 
 main().catch((error) => {
   console.error(error);
