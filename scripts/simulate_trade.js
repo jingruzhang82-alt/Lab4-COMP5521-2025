@@ -1,84 +1,134 @@
-const hre = require("hardhat");
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
-// --- CONFIGURATION ---
-// ! Paste the deployed contract addresses here
-const TOKEN_CONTRACT_ADDRESS = "0xYourDeployedTokenAddress";
-const NFT_CONTRACT_ADDRESS = "0xB9cCa0cfe048f99A4B1Df4ba51499Cde9Ab2b8e4";
+describe("MyNFT (ERC721)", function () {
+  let MyNFT;
+  let nftContract;
+  let owner;
+  let user1;
+  let user2;
+  const baseUri = "https://ipfs.io/ipfs/comp5521/";
 
-// Just a sample metadata URI.
-const METADATA_URI = "https://ipfs.io/ipfs/QmeSjSinHpPnmXmspMjwiXyN6zS4E9zccariGR3jxcaWtq/1";
-// --- END CONFIGURATION ---
+  // 每个测试前部署新合约
+  beforeEach(async function () {
+    [owner, user1, user2] = await ethers.getSigners();
+    
+    // 部署你的NFT合约
+    MyNFT = await ethers.getContractFactory("MyNFT");
+    nftContract = await MyNFT.deploy();
+    await nftContract.waitForDeployment();
+  });
 
-async function main() {
-  // Get signers to represent different users
-  const [owner, alice, bob] = await hre.ethers.getSigners();
-  console.log(`Owner: ${owner.address}`);
-  console.log(`Alice: ${alice.address}`);
-  console.log(`Bob:   ${bob.address}`);
+  describe("合约基础信息", function () {
+    it("应正确设置名称和符号", async function () {
+      expect(await nftContract.name()).to.equal("COMP5521 Digital Collectible");
+      expect(await nftContract.symbol()).to.equal("C5NFT");
+    });
 
-  // Get contract instances
-  const tokenContract = await hre.ethers.getContractAt("MySimpleToken", TOKEN_CONTRACT_ADDRESS);
-  const nftContract = await hre.ethers.getContractAt("MyNFT", NFT_CONTRACT_ADDRESS);
+    it("应正确设置所有者", async function () {
+      expect(await nftContract.owner()).to.equal(owner.address);
+    });
 
-  // --- 1. SETUP THE SCENE ---
-  console.log("\n--- Setting up the scene ---");
-  // Owner mints 1000 MST tokens to Bob
-  const mintAmount = hre.ethers.parseUnits("1000", 18);
-  let tx = await tokenContract.connect(owner).mint(bob.address, mintAmount);
-  await tx.wait();
-  console.log(`Minted 1000 MST to Bob.`);
+    it("初始tokenId计数器应为1", async function () {
+      expect(await nftContract.getCurrentTokenId()).to.equal(1);
+    });
+  });
 
-  // Owner mints NFT with tokenId 0 to Alice
-  tx = await nftContract.connect(owner).safeMint(alice.address, METADATA_URI);
-  await tx.wait();
-  console.log(`Minted NFT with tokenId 1 to Alice.`);
+  describe("铸造功能 (safeMint)", function () {
+    it("所有者应能铸造NFT并正确分配所有权", async function () {
+      // 铸造第一个NFT（tokenId=1）给user1
+      const tokenUri1 = baseUri + "1";
+      await nftContract.safeMint(user1.address, tokenUri1);
+      
+      // 验证tokenId计数器自增
+      expect(await nftContract.getCurrentTokenId()).to.equal(2);
+      
+      // 验证所有权
+      expect(await nftContract.ownerOf(1)).to.equal(user1.address);
+      expect(await nftContract.balanceOf(user1.address)).to.equal(1);
+      
+      // 验证元数据URI
+      expect(await nftContract.tokenURI(1)).to.equal(tokenUri1);
 
-  console.log("\n--- Initial State ---");
-  console.log(`Alice's NFT Balance: ${await nftContract.balanceOf(alice.address)}`);
-  console.log(`Bob's   NFT Balance: ${await nftContract.balanceOf(bob.address)}`);
-  console.log(`Owner of NFT #1: ${await nftContract.ownerOf(1)}`);
-  console.log(`Bob's Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(bob.address), 18)} MST`);
+      // 铸造第二个NFT（tokenId=2）给user2
+      const tokenUri2 = baseUri + "2";
+      await nftContract.safeMint(user2.address, tokenUri2);
+      
+      expect(await nftContract.getCurrentTokenId()).to.equal(3);
+      expect(await nftContract.ownerOf(2)).to.equal(user2.address);
+      expect(await nftContract.tokenURI(2)).to.equal(tokenUri2);
+    });
 
-  // --- 2. THE APPROVALS (PERMISSION SLIPS) ---
-  console.log("\n--- The Approvals ---");
-  const price = hre.ethers.parseUnits("500", 18); // The agreed price is 500 MST
+    it("非所有者不能铸造NFT（onlyOwner权限控制）", async function () {
+      await expect(
+        nftContract.connect(user1).safeMint(user2.address, baseUri + "3")
+      ).to.be.revertedWithCustomError(nftContract, "OwnableUnauthorizedAccount");
+    });
+  });
 
-  // Alice approves the Owner to manage her NFT #1
-  // In a real DApp, the 'owner.address' would be the Marketplace Contract's address
-  tx = await nftContract.connect(alice).approve(owner.address, 1);
-  await tx.wait();
-  console.log(`Alice approved Owner to manage her NFT #0.`);
-  
-  // Bob approves the Owner to spend 500 of his MST tokens
-  tx = await tokenContract.connect(bob).approve(owner.address, price);
-  await tx.wait();
-  console.log(`Bob approved Owner to spend 500 MST.`);
+  describe("NFT转移功能", function () {
+    beforeEach(async function () {
+      // 提前铸造2个NFT作为测试基础（tokenId=1和2）
+      await nftContract.safeMint(user1.address, baseUri + "1");
+      await nftContract.safeMint(user1.address, baseUri + "2");
+    });
 
-  // --- 3. THE TRADE (EXECUTED BY THE "MARKETPLACE") ---
-  console.log("\n--- Executing The Trade ---");
-  // The Owner acts as the marketplace and executes the transfers
-  // Transfer 500 MST from Bob to Alice
-  tx = await tokenContract.connect(owner).transferFrom(bob.address, alice.address, price);
-  await tx.wait();
-  console.log(`Owner (as marketplace) transferred 500 MST from Bob to Alice.`);
-  
-  // Transfer NFT #1 from Alice to Bob
-  tx = await nftContract.connect(owner).transferFrom(alice.address, bob.address, 1);
-  await tx.wait();
-  console.log(`Owner (as marketplace) transferred NFT #1 from Alice to Bob.`);
+    it("NFT所有者应能转移自己的NFT", async function () {
+      // user1将tokenId=1转移给user2
+      await nftContract.connect(user1).transferFrom(user1.address, user2.address, 1);
+      
+      // 验证所有权变更
+      expect(await nftContract.ownerOf(1)).to.equal(user2.address);
+      expect(await nftContract.balanceOf(user1.address)).to.equal(1); // 剩余tokenId=2
+      expect(await nftContract.balanceOf(user2.address)).to.equal(1);
+    });
 
-  // --- 4. FINAL STATE ---
-  console.log("\n--- Final State ---");
-  console.log(`Alice's NFT Balance: ${await nftContract.balanceOf(alice.address)}`);
-  console.log(`Bob's   NFT Balance: ${await nftContract.balanceOf(bob.address)}`);
-  console.log(`Owner of NFT #0: ${await nftContract.ownerOf(0)}`);
-  console.log(`Alice's Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(alice.address), 18)} MST`);
-  console.log(`Bob's   Token Balance: ${hre.ethers.formatUnits(await tokenContract.balanceOf(bob.address), 18)} MST`);
-  console.log(`Total NFTs minted: ${await nftContract.getCurrentTokenId()}`);
-}
+    it("非所有者未授权时不能转移NFT", async function () {
+      // user2尝试转移不属于自己的tokenId=1
+      await expect(
+        nftContract.connect(user2).transferFrom(user1.address, user2.address, 1)
+      ).to.be.revertedWithCustomError(nftContract, "ERC721InsufficientApproval");
+    });
 
+    it("授权后可转移他人NFT", async function () {
+      // user1授权user2管理tokenId=1
+      await nftContract.connect(user1).approve(user2.address, 1);
+      
+      // user2使用授权转移NFT
+      await nftContract.connect(user2).transferFrom(user1.address, owner.address, 1);
+      
+      expect(await nftContract.ownerOf(1)).to.equal(owner.address);
+    });
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    it("批量授权(setApprovalForAll)后可转移所有NFT", async function () {
+      // user1授权user2管理自己的所有NFT
+      await nftContract.connect(user1).setApprovalForAll(user2.address, true);
+      
+      // 验证授权状态
+      expect(await nftContract.isApprovedForAll(user1.address, user2.address)).to.be.true;
+      
+      // user2转移两个NFT
+      await nftContract.connect(user2).transferFrom(user1.address, owner.address, 1);
+      await nftContract.connect(user2).transferFrom(user1.address, owner.address, 2);
+      
+      // 验证结果
+      expect(await nftContract.balanceOf(user1.address)).to.equal(0);
+      expect(await nftContract.balanceOf(owner.address)).to.equal(2);
+    });
+  });
+
+  describe("异常情况处理", function () {
+    it("查询不存在的tokenId应报错", async function () {
+      // 此时只铸造了tokenId=1（如果前面测试没影响的话），查询999应报错
+      await expect(
+        nftContract.ownerOf(999)
+      ).to.be.revertedWithCustomError(nftContract, "ERC721NonexistentToken");
+    });
+
+    it("转移不存在的NFT应报错", async function () {
+      await expect(
+        nftContract.transferFrom(owner.address, user1.address, 999)
+      ).to.be.revertedWithCustomError(nftContract, "ERC721NonexistentToken");
+    });
+  });
 });

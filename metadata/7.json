@@ -1,0 +1,19 @@
+{
+    "name": "COMP5521 Digital Collectible #7",
+    "description": "First NFT for COMP5521 Final Project - Created by ZhangJingru",
+    "image": "https://raw.githubusercontent.com/jingruzhang82-alt/Lab4-COMP5521-2025/main/images/1.png",
+    "attributes": [
+        {
+            "trait_type": "Course",
+            "value": "COMP5521"
+        },
+        {
+            "trait_type": "University",
+            "value": "PolyU"
+        },
+        {
+            "trait_type": "Creator",
+            "value": "ZhangJingru"
+        }
+    ]
+}
